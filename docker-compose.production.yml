@@ -31,7 +31,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
 
   # [2] 프론트엔드 (Next.js) - 프로덕션 모드
   frontend:
