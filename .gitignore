@@ -91,3 +91,5 @@ ngrok.yml
 
 # [11. 문서]
 docs/
+
+.github/workflows/sync-to-aws.yml
