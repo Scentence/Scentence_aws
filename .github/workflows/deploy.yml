@@ -1,0 +1,109 @@
+name: CD - Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:  # 수동 실행 가능
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+      
+      - name: 배포 시작 알림
+        run: |
+          echo "🚀 배포 시작: ${{ github.sha }}"
+          echo "작성자: ${{ github.actor }}"
+          echo "커밋 메시지: ${{ github.event.head_commit.message }}"
+      
+      - name: EC2 배포
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script: |
+            echo "📦 배포 시작..."
+            
+            # 프로젝트 디렉토리 찾기 (여러 가능한 경로 - 폴더명 변경시 수정 필요하여)
+            if [ -d ~/scentence ]; then
+              PROJECT_DIR=~/scentence
+            elif [ -d ~/Scentence_aws_test ]; then
+              PROJECT_DIR=~/Scentence_aws_test
+            elif [ -d ~/scentence_aws_test ]; then
+              PROJECT_DIR=~/scentence_aws_test
+            elif [ -d /home/ubuntu/scentence ]; then
+              PROJECT_DIR=/home/ubuntu/scentence
+            else
+              echo "❌ 프로젝트 디렉토리를 찾을 수 없습니다!"
+              exit 1
+            fi
+            
+            echo "📁 프로젝트 디렉토리: $PROJECT_DIR"
+            cd $PROJECT_DIR
+            
+            # 최신 코드 가져오기
+            echo "🔄 최신 코드 가져오는 중..."
+            git fetch origin
+            git reset --hard origin/main
+            
+            # .env 파일 확인
+            if [ ! -f .env ]; then
+              echo "❌ .env 파일이 없습니다!"
+              exit 1
+            fi
+            
+            # Docker 이미지 재빌드 및 배포
+            echo "🐳 Docker 컨테이너 재시작 중..."
+            docker compose -f docker-compose.production.yml down
+            docker compose -f docker-compose.production.yml build --no-cache
+            docker compose -f docker-compose.production.yml up -d
+            
+            # 컨테이너 상태 확인
+            echo "✅ 배포 완료! 컨테이너 상태:"
+            docker ps
+            
+            # 헬스체크
+            echo "🏥 헬스체크 대기 중..."
+            sleep 30
+            
+            # 오래된 이미지 정리
+            echo "🧹 오래된 Docker 리소스 정리 중..."
+            docker image prune -af --filter "until=24h"
+      
+      - name: 헬스체크
+        run: |
+          echo "🏥 서비스 헬스체크..."
+          
+          # Backend 헬스체크
+          curl -f https://scentence.kro.kr/api/backend-openapi || exit 1
+          echo "✅ Backend 정상"
+          
+          # Scentmap 헬스체크
+          curl -f https://scentence.kro.kr/api/scentmap-health || exit 1
+          echo "✅ Scentmap 정상"
+          
+          # Layering 헬스체크
+          curl -f https://scentence.kro.kr/api/layering-health || exit 1
+          echo "✅ Layering 정상"
+          
+          echo "🎉 모든 서비스 정상 작동 중!"
+      
+      - name: 배포 완료 알림
+        if: success()
+        run: |
+          echo "✅ 배포 성공!"
+          echo "URL: https://scentence.kro.kr"
+          echo "커밋: ${{ github.sha }}"
+      
+      - name: 배포 실패 알림
+        if: failure()
+        run: |
+          echo "❌ 배포 실패!"
+          echo "로그를 확인하세요."
