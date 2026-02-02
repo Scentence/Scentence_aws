@@ -94,19 +94,19 @@ export default function Sidebar({ isOpen, onClose, context }: SidebarProps) {
             opacity: 0,
             transition: { staggerChildren: 0.05, staggerDirection: -1 }
         }
-    };
+    } as const;
 
     const cardVariants = {
         hidden: { opacity: 0, y: -20, scale: 0.95 },
         show: {
             opacity: 1, y: 0, scale: 1,
-            transition: { duration: 0.4, ease: "easeOut" }
+            transition: { duration: 0.4, ease: [0, 0, 0.2, 1] as const }
         },
         exit: {
             opacity: 0, y: -10, scale: 0.95,
             transition: { duration: 0.2 }
         }
-    };
+    } as const;
 
     return (
         <AnimatePresence>
