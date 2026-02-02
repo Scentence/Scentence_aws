@@ -1,0 +1,68 @@
+name: Rollback - 이전 버전으로 되돌리기
+
+on:
+  workflow_dispatch:  # 수동으로만 실행
+    inputs:
+      commit_sha:
+        description: '되돌릴 커밋 SHA (비워두면 이전 커밋)'
+        required: false
+        type: string
+
+jobs:
+  rollback:
+    name: Rollback to Previous Version
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Rollback 시작
+        run: |
+          echo "⚠️ Rollback 시작..."
+          echo "대상 커밋: ${{ github.event.inputs.commit_sha || '이전 커밋' }}"
+      
+      - name: EC2 Rollback
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script: |
+            echo "🔙 Rollback 진행 중..."
+            
+            # 프로젝트 디렉토리 찾기
+            if [ -d ~/scentence ]; then
+              PROJECT_DIR=~/scentence
+            elif [ -d ~/Scentence_aws_test ]; then
+              PROJECT_DIR=~/Scentence_aws_test
+            elif [ -d ~/scentence_aws_test ]; then
+              PROJECT_DIR=~/scentence_aws_test
+            elif [ -d /home/ubuntu/scentence ]; then
+              PROJECT_DIR=/home/ubuntu/scentence
+            else
+              echo "❌ 프로젝트 디렉토리를 찾을 수 없습니다!"
+              exit 1
+            fi
+            
+            echo "📁 프로젝트 디렉토리: $PROJECT_DIR"
+            cd $PROJECT_DIR
+            
+            # 커밋 SHA가 지정되었으면 해당 커밋으로, 아니면 이전 커밋으로
+            if [ -n "${{ github.event.inputs.commit_sha }}" ]; then
+              git reset --hard ${{ github.event.inputs.commit_sha }}
+            else
+              git reset --hard HEAD~1
+            fi
+            
+            # Docker 재시작
+            docker compose -f docker-compose.production.yml down
+            docker compose -f docker-compose.production.yml up -d --build
+            
+            echo "✅ Rollback 완료!"
+            docker ps
+      
+      - name: 헬스체크
+        run: |
+          echo "🏥 서비스 헬스체크..."
+          sleep 30
+          curl -f https://scentence.kro.kr/api/backend-openapi || exit 1
+          echo "✅ Rollback 성공!"
