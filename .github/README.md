@@ -1,7 +1,7 @@
 # 🌸 Scentence - 프로덕션 배포 레포지토리
 
 > **이 레포지토리는 프로덕션 배포 전용입니다.**  
-> 개발 및 테스트는 [개발 레포지토리](개발_레포_URL_여기에_입력)에서 진행됩니다.
+> 개발 및 테스트는 [개발 레포지토리](https://github.com/Scentence/Scentence)에서 진행됩니다.
 
 ## 📍 서비스 접속
 
@@ -51,11 +51,11 @@
 
 | 컴포넌트 | 기술 스택 | 포트 | 설명 |
 |---------|----------|------|------|
-| **Frontend** | Next.js 15 | 3000 | 사용자 인터페이스 |
+| **Frontend** | Next.js 16 | 3000 | 사용자 인터페이스 |
 | **Backend** | FastAPI | 8000 | 회원가입, 챗봇, 향수옷장 API |
 | **Scentmap** | FastAPI | 8001 | 향수 지도 시각화 서비스 |
 | **Layering** | FastAPI | 8002 | 향수 레이어링 추천 서비스 |
-| **Database** | PostgreSQL 17 + pgvector | 5435 | 메인 데이터베이스 (RDS) |
+| **Database** | PostgreSQL 17 + pgvector | 5435 | 메인 데이터베이스) |
 | **Storage** | AWS S3 + CloudFront | - | 프로필 이미지 저장 및 배포 |
 | **Load Balancer** | AWS ALB | 80/443 | 부하 분산 및 SSL 종료 |
 | **SSL/TLS** | AWS ACM | - | SSL 인증서 관리 |
@@ -75,7 +75,7 @@
 | **운영체제** | Ubuntu 22.04 LTS |
 | **리전** | ap-northeast-2 (서울) |
 
-### 데이터베이스 (RDS)
+### 데이터베이스
 
 | 항목 | 사양 |
 |------|------|
@@ -89,14 +89,13 @@
 
 | 소프트웨어 | 버전 | 비고 |
 |-----------|------|------|
-| **Docker** | TBD | `docker --version` |
-| **Docker Compose** | TBD | `docker compose version` |
-| **Node.js** | TBD | Frontend 빌드용 |
-| **Python** | TBD | Backend 서비스용 |
-| **PostgreSQL** | 17.x | pgvector 포함 |
-| **AWS ALB** | - | 리버스 프록시 및 SSL 종료 역할할 |
+| **Docker** | 29.2.0 | 컨테이너 런타임 |
+| **Docker Compose** | v5.0.2 | 오케스트레이션 도구 |
+| **Node.js** | 20.x(LTS) | Frontend 빌드용 (Next.js 16.1.1) |
+| **Python** | 3.11 | Backend 서비스용 (FastAPI + Uvicorn) |
+| **PostgreSQL** | 17.x | pgvector 확장 포함 |
+| **AWS ALB** | - | 리버스 프록시 및 SSL 종료 역할 |
 
-> 💡 **TBD (To Be Determined)**: 서버 접속 후 해당 명령어로 버전 확인 필요 (버전 기입후 해당줄 삭제)
 > 💡 **리버스 프록시**: Nginx 대신 AWS Application Load Balancer 사용
 
 ---
@@ -107,7 +106,7 @@
 
 ### 환경변수 카테고리
 
-- 🗄️ **데이터베이스**: RDS PostgreSQL 연결 정보
+- 🗄️ **데이터베이스**: RDS, VectorDB PostgreSQL 연결 정보
 - ☁️ **AWS 자격증명**: S3, CloudFront 접근용
 - 🤖 **AI 서비스**: OpenAI, LangSmith API 키
 - 👤 **관리자 설정**: 관리자 이메일 목록
@@ -220,23 +219,24 @@ docker stats
 ## 👥 담당자 및 연락처
 
 ### 배포 담당
-- **배포 총괄**: [@GitHub_ID_여기에_입력]
+- **배포 총괄**: [@sosodoit]
 
 ### 백엔드 담당
-- **향수추천**: [@GitHub_ID_여기에_입력]
-- **레이어링**: [@GitHub_ID_여기에_입력]
-- **향수지도**: [@GitHub_ID_여기에_입력]
-- **향수옷장**: [@GitHub_ID_여기에_입력]
-- **회원가입**: [@GitHub_ID_여기에_입력]
+- **향수추천**: [@Melonmacaron]
+- **레이어링**: [@gitsgetit]
+- **향수지도**: [@sosodoit]
+- **향수옷장**: [@souluk319]
+- **회원가입**: [@ChocolateStrawberryYumYum]
 
 ### 프론트엔드 담당
-- **프론트엔드**: [@GitHub_ID_여기에_입력]
+- **프론트엔드**: [@souluk319]
 
 ### AI/데이터 담당
-- **데이터 수집**: [@GitHub_ID_1], [@GitHub_ID_2], [@GitHub_ID_3]
-- **향수추천**: [@GitHub_ID_1], [@GitHub_ID_2]
-- **레이어링**: [@GitHub_ID_여기에_입력]
-- **향수지도**: [@GitHub_ID_여기에_입력]
+- **데이터수집**: [@Melonmacaron], [@gitsgetit], [@ChocolateStrawberryYumYum]
+- **향수사전구축**: [@gitsgetit], [@ChocolateStrawberryYumYum]
+- **향수추천**: [@Melonmacaron], [@GitHub_ID_2]
+- **레이어링**: [@gitsgetit]
+- **향수지도**: [@sosodoit]
 
 ---
 
@@ -286,8 +286,8 @@ Scentence_aws/
 │   │   ├── deploy.yml             # 배포 자동화
 │   │   └── rollback.yml           # 롤백 자동화
 │   ├── DEPLOYMENT.md              # 배포 가이드
-│   └── README.md                  # 이 파일
-├── frontend/                      # Next.js 15 프론트엔드
+│   └── README.md                  
+├── frontend/                      # Next.js 프론트엔드
 │   ├── app/                       # App Router
 │   ├── components/                # React 컴포넌트
 │   └── Dockerfile.production
