@@ -1,127 +1,331 @@
-# 🚀 Scentence CI/CD 가이드
+# 🌸 Scentence - 프로덕션 배포 레포지토리
 
-## 📋 개요
+> **이 레포지토리는 프로덕션 배포 전용입니다.**  
+> 개발 및 테스트는 [개발 레포지토리](개발_레포_URL_여기에_입력)에서 진행됩니다.
 
-이 프로젝트는 GitHub Actions를 사용하여 자동 테스트 및 배포를 수행합니다.
+## 📍 서비스 접속
+
+| 서비스 | URL |
+|--------|-----|
+| **🌐 프로덕션 사이트** | https://scentence.kro.kr |
+| **📚 API 문서** | https://scentence.kro.kr/api/backend-openapi |
+| **🗺️ Scentmap Health** | https://scentence.kro.kr/api/scentmap-health |
+| **🎨 Layering Health** | https://scentence.kro.kr/api/layering-health |
+
+---
+
+## 🏗️ 시스템 아키텍처
+
+### 인프라 구성
 
 ```
-Scentence_aws_test/
-├── .github/
-│   ├── workflows/
-│   │   ├── ci.yml          ✅ 자동 테스트 (PR 시)
-│   │   ├── deploy.yml      ✅ 자동 배포 (main push 시)
-│   │   └── rollback.yml    ✅ 롤백 (수동)
-│   └── README.md           ✅ 워크플로우 가이드
-├── scripts/
-│   ├── deploy.sh           ✅ 배포 스크립트
-│   └── rollback.sh         ✅ 롤백 스크립트
+┌─────────────────────────────────────────────────────┐
+│                   CloudFront CDN                    │
+│               (Profile Image Deploy)                │
+└─────────────────────────────────────────────────────┘
+                         │
+┌─────────────────────────────────────────────────────┐
+│            Application Load Balancer                │
+│           (SSL/TLS Termination - ACM)               │
+└─────────────────────────────────────────────────────┘
+                         │
+┌─────────────────────────────────────────────────────┐
+│                   EC2 Instance                      │
+│                 (Docker Compose)                    │
+│    ┌──────────┬──────────┬──────────┬──────────┐    │
+│    │ Frontend │ Backend  │ Scentmap │ Layering │    │
+│    │ Next.js  │ FastAPI  │ FastAPI  │ FastAPI  │    │
+│    │  :3000   │  :8000   │  :8001   │  :8002   │    │
+│    └──────────┴──────────┴──────────┴──────────┘    │
+└─────────────────────────────────────────────────────┘
+                         │
+            ┌────────────┴────────────┐
+            │                         │
+    ┌───────▼────────┐       ┌────────▼────────┐
+    │ RDS PostgreSQL │       │     AWS S3      │
+    │ & pgvector     │       │ (Profile Image) │
+    └────────────────┘       └─────────────────┘
 ```
 
-## 🔧 워크플로우
+### 주요 컴포넌트
 
-### 1. CI (Continuous Integration) - `ci.yml`
-- **트리거**: PR 생성 또는 main/develop 브랜치에 push
-- **작업**:
-  - Backend 테스트 및 Lint
-  - Frontend 테스트 및 Lint
-  - Scentmap 테스트
-  - Layering 테스트
+| 컴포넌트 | 기술 스택 | 포트 | 설명 |
+|---------|----------|------|------|
+| **Frontend** | Next.js 15 | 3000 | 사용자 인터페이스 |
+| **Backend** | FastAPI | 8000 | 회원가입, 챗봇, 향수옷장 API |
+| **Scentmap** | FastAPI | 8001 | 향수 지도 시각화 서비스 |
+| **Layering** | FastAPI | 8002 | 향수 레이어링 추천 서비스 |
+| **Database** | PostgreSQL 17 + pgvector | 5435 | 메인 데이터베이스 (RDS) |
+| **Storage** | AWS S3 + CloudFront | - | 프로필 이미지 저장 및 배포 |
+| **Load Balancer** | AWS ALB | 80/443 | 부하 분산 및 SSL 종료 |
+| **SSL/TLS** | AWS ACM | - | SSL 인증서 관리 |
 
-### 2. CD (Continuous Deployment) - `deploy.yml`
-- **트리거**: main 브랜치에 push 또는 수동 실행
-- **작업**:
-  - EC2 서버에 SSH 접속
-  - 최신 코드 pull
-  - Docker 컨테이너 재빌드 및 재시작
-  - 헬스체크
+---
 
-### 3. Rollback - `rollback.yml`
-- **트리거**: 수동 실행만 가능
-- **작업**:
-  - 이전 커밋으로 되돌리기
-  - Docker 재시작
-  - 헬스체크
+## 💻 프로덕션 서버 사양
 
-## 🔐 필수 Secrets 설정
+### EC2 인스턴스
 
-GitHub Repository → Settings → Secrets and variables → Actions에서 설정:
+| 항목 | 사양 |
+|------|------|
+| **인스턴스 타입** | t3.large |
+| **vCPU** | 2 코어 |
+| **메모리** | 8GB RAM |
+| **스토리지** | 30GB EBS (gp3) |
+| **운영체제** | Ubuntu 22.04 LTS |
+| **리전** | ap-northeast-2 (서울) |
 
-| Secret 이름 | 설명 | 예시 |
-|-------------|------|------|
-| `EC2_HOST` | EC2 퍼블릭 IP 또는 도메인 | `12.34.56.78` 또는 `yourdomain.com` |
-| `EC2_USER` | EC2 SSH 사용자명 | `ubuntu` |
-| `EC2_SSH_KEY` | EC2 SSH Private Key (전체 내용) | `-----BEGIN RSA PRIVATE KEY-----...` |
+### 데이터베이스 (RDS)
 
-## 📝 배포 프로세스
+| 항목 | 사양 |
+|------|------|
+| **엔진** | PostgreSQL 17 |
+| **확장** | pgvector (벡터 검색) |
+| **데이터베이스** | `perfume_db`, `recom_db`, `member_db` |
 
-### 자동 배포 (Automatic)
+---
+
+## 🔧 소프트웨어 버전
+
+| 소프트웨어 | 버전 | 비고 |
+|-----------|------|------|
+| **Docker** | TBD | `docker --version` |
+| **Docker Compose** | TBD | `docker compose version` |
+| **Node.js** | TBD | Frontend 빌드용 |
+| **Python** | TBD | Backend 서비스용 |
+| **PostgreSQL** | 17.x | pgvector 포함 |
+| **AWS ALB** | - | 리버스 프록시 및 SSL 종료 역할할 |
+
+> 💡 **TBD (To Be Determined)**: 서버 접속 후 해당 명령어로 버전 확인 필요 (버전 기입후 해당줄 삭제)
+> 💡 **리버스 프록시**: Nginx 대신 AWS Application Load Balancer 사용
+
+---
+
+## 🔐 환경변수 설정
+
+프로덕션 환경변수는 **EC2 서버의 `.env` 파일**에 설정되어 있습니다.
+
+### 환경변수 카테고리
+
+- 🗄️ **데이터베이스**: RDS PostgreSQL 연결 정보
+- ☁️ **AWS 자격증명**: S3, CloudFront 접근용
+- 🤖 **AI 서비스**: OpenAI, LangSmith API 키
+- 👤 **관리자 설정**: 관리자 이메일 목록
+- 🔒 **인증**: Kakao OAuth, NextAuth 시크릿
+
+### 환경변수 파일 위치
+
 ```bash
-# 1. 코드 수정
-git add .
-git commit -m "새 기능 추가"
-
-# 2. main 브랜치에 push
-git push origin main
-
-# 3. 🤖 자동으로 배포 시작!
-# GitHub Actions가 자동으로 EC2에 배포합니다.
+# EC2 서버
+/home/ubuntu/Scentence_aws/.env
 ```
 
-### 수동 배포 (Manual)
-1. GitHub Repository → Actions
-2. "CD - Deploy to EC2" 워크플로우 선택
-3. "Run workflow" 버튼 클릭
-4. 브랜치 선택 → "Run workflow"
+### 환경변수 템플릿
 
-### 롤백 (Rollback)
-1. GitHub Repository → Actions
-2. "Rollback - 이전 버전으로 되돌리기" 선택
-3. "Run workflow" 클릭
-4. (선택) 특정 커밋 SHA 입력
-5. "Run workflow"
+자세한 환경변수 목록 및 설명은 [`../.env.example`](../.env.example) 파일을 참조하세요.
 
-## 🔍 배포 상태 확인
+---
 
-### GitHub Actions 로그
-- Repository → Actions → 최근 워크플로우 실행 클릭
+## 📚 배포 관련 문서
 
-### 직접 확인
+### 배포 프로세스
+
+- 📖 **[배포 가이드](./DEPLOYMENT.md)** - 전체 배포 프로세스 및 워크플로우
+- 🔄 **[롤백 가이드](./DEPLOYMENT.md#3단계-롤백-문제-발생-시)** - 긴급 롤백 방법
+- ✅ **[배포 후 확인사항](./DEPLOYMENT.md#-워크플로우-실행-후-확인-사항)** - 헬스체크 및 모니터링
+
+### GitHub Actions
+
+- 🚀 [Deploy Workflow](./workflows/deploy.yml) - 자동 배포 워크플로우
+- ⏮️ [Rollback Workflow](./workflows/rollback.yml) - 롤백 워크플로우
+
+---
+
+## 🚀 로컬에서 프로덕션 환경 테스트
+
+프로덕션 설정으로 로컬에서 테스트하는 방법:
+
 ```bash
-# SSH 접속
-ssh -i <your-key-file>.pem ubuntu@<your-ec2-ip>
+# 1. 레포지토리 클론
+git clone <repository-url>
+cd Scentence_aws
 
-# Docker 상태 확인
+# 2. 환경변수 설정
+cp .env.example .env
+# .env 파일을 실제 값으로 수정
+
+# 3. 프로덕션 모드로 실행
+docker compose -f docker-compose.production.yml up --build
+
+# 4. 접속 확인
+# Frontend: http://localhost:3000
+# Backend API: http://localhost:8000/docs
+# Scentmap: http://localhost:8001/health
+# Layering: http://localhost:8002/health
+```
+
+### 컨테이너 중지 및 정리
+
+```bash
+# 컨테이너 중지
+docker compose -f docker-compose.production.yml down
+
+# 볼륨까지 삭제 (DB 데이터 초기화)
+docker compose -f docker-compose.production.yml down -v
+```
+
+---
+
+## 📊 모니터링 및 로그
+
+### 헬스체크 엔드포인트
+
+| 서비스 | 헬스체크 URL |
+|--------|-------------|
+| **Backend** | https://scentence.kro.kr/api/backend-openapi |
+| **Scentmap** | https://scentence.kro.kr/api/scentmap-health |
+| **Layering** | https://scentence.kro.kr/api/layering-health |
+
+### EC2 서버 로그 확인
+
+```bash
+# EC2 서버 접속
+ssh -i your-key.pem ubuntu@<server-ip>
+
+# 전체 서비스 로그 (실시간)
+docker compose -f docker-compose.production.yml logs -f
+
+# 특정 서비스 로그
+docker compose logs -f frontend
+docker compose logs -f backend
+docker compose logs -f scentmap
+docker compose logs -f layering
+
+# 최근 로그만 보기
+docker compose logs --tail=100 frontend
+```
+
+### 컨테이너 상태 확인
+
+```bash
+# 실행 중인 컨테이너 확인
 docker ps
 
-# 로그 확인
-docker compose -f docker-compose.production.yml logs -f
+# 리소스 사용량 확인
+docker stats
 ```
 
-## ⚠️ 주의사항
+---
 
-1. **절대 커밋하지 말아야 할 파일**:
-   - `.env` (환경변수)
-   - `*.pem` (SSH 키)
-   - `*.key` (인증 키)
+## 👥 담당자 및 연락처
 
-2. **배포 전 체크리스트**:
-   - [ ] 로컬에서 테스트 완료
-   - [ ] `.env` 파일에 민감 정보 없는지 확인
-   - [ ] 커밋 메시지 명확히 작성
+### 배포 담당
+- **배포 총괄**: [@GitHub_ID_여기에_입력]
 
-3. **배포 실패 시**:
-   - GitHub Actions 로그 확인
-   - EC2 SSH 접속하여 Docker 로그 확인
-   - 필요시 Rollback 워크플로우 실행
+### 백엔드 담당
+- **향수추천**: [@GitHub_ID_여기에_입력]
+- **레이어링**: [@GitHub_ID_여기에_입력]
+- **향수지도**: [@GitHub_ID_여기에_입력]
+- **향수옷장**: [@GitHub_ID_여기에_입력]
+- **회원가입**: [@GitHub_ID_여기에_입력]
 
-## 🎯 배포 후 확인 사항
+### 프론트엔드 담당
+- **프론트엔드**: [@GitHub_ID_여기에_입력]
 
-- [ ] 웹사이트 정상 접속: https://scentence.kro.kr
-- [ ] Backend API: https://scentence.kro.kr/api/backend-openapi
-- [ ] Scentmap: https://scentence.kro.kr/api/scentmap-health
-- [ ] Layering: https://scentence.kro.kr/api/layering-health
+### AI/데이터 담당
+- **데이터 수집**: [@GitHub_ID_1], [@GitHub_ID_2], [@GitHub_ID_3]
+- **향수추천**: [@GitHub_ID_1], [@GitHub_ID_2]
+- **레이어링**: [@GitHub_ID_여기에_입력]
+- **향수지도**: [@GitHub_ID_여기에_입력]
 
-## 📊 배포 히스토리
+---
 
-모든 배포는 GitHub Actions에서 확인 가능:
-- Repository → Actions → Workflow runs
+## 🆘 긴급 상황 대응
+
+### 장애 발생 시 조치
+
+1. **즉시 롤백 실행**
+   - GitHub Actions → Rollback 워크플로우 실행
+   - 자세한 방법: [롤백 가이드](./DEPLOYMENT.md#3단계-롤백-문제-발생-시)
+
+2. **담당자에게 연락**
+   - 배포 담당자에게 Discord로 긴급 연락
+   - 해당 기능 담당자에게 상황 전달
+
+3. **장애 보고서 작성**
+   - [GitHub Issues](../../issues)에 장애 내용 기록
+   - 발생 시간, 증상, 조치 내용 상세 기록
+
+### 유용한 링크
+
+- 🔄 [GitHub Actions](../../actions) - 배포 히스토리 및 로그
+- 🐛 [Issues](../../issues) - 버그 및 장애 보고
+- 📥 [Pull Requests](../../pulls) - 배포 대기 중인 PR 목록
+
+---
+
+## 🔒 보안 주의사항
+
+### ⚠️ 절대 커밋 금지 항목
+
+다음 파일들은 **절대 Git에 커밋하지 마세요**:
+
+- `.env` - 환경변수 파일
+- `*.pem` - SSH 개인 키
+- `*.key` - 인증 키 파일
+- 비밀번호, API 키 등 민감 정보
+
+---
+
+## 📁 프로젝트 구조
+
+```
+Scentence_aws/
+├── .github/
+│   ├── workflows/                 # GitHub Actions 워크플로우
+│   │   ├── deploy.yml             # 배포 자동화
+│   │   └── rollback.yml           # 롤백 자동화
+│   ├── DEPLOYMENT.md              # 배포 가이드
+│   └── README.md                  # 이 파일
+├── frontend/                      # Next.js 15 프론트엔드
+│   ├── app/                       # App Router
+│   ├── components/                # React 컴포넌트
+│   └── Dockerfile.production
+├── backend/                       # FastAPI 백엔드
+│   ├── app/
+│   ├── routers/
+│   └── Dockerfile.production
+├── scentmap/                      # 향수 지도 서비스
+│   └── Dockerfile.production
+├── layering/                      # 레이어링 추천 서비스
+│   └── Dockerfile.production
+├── scripts/                       # 배포/운영 스크립트
+│   ├── deploy.sh
+│   └── rollback.sh
+├── docker-compose.production.yml  # 프로덕션 Docker 구성
+└── .env.example                   # 환경변수 템플릿
+```
+
+---
+
+## 📌 버전 정보
+
+| 항목 | 정보 |
+|------|------|
+| **현재 버전** | v1.0.0 |
+| **마지막 배포** | 2026-02-03 |
+| **배포 방식** | 수동 트리거 → 자동 배포 |
+| **프로덕션 시작** | 2026-02-04 |
+
+자세한 변경 이력은 [Releases](../../releases) 및 [배포 히스토리](./DEPLOYMENT.md#-배포-히스토리) 참조
+
+---
+
+## 📝 라이선스
+
+이 프로젝트의 라이선스는 [LICENSE](../LICENSE) 파일을 참조하세요.
+
+---
+
+**🌸 Scentence Team**  
+**Last Updated**: 2026-02-03
