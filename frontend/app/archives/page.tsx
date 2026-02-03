@@ -345,7 +345,8 @@ export default function ArchivesPage() {
                                         <HistoryModal
                                             historyItems={collection.filter(p => p.register_status === 'HAD')}
                                             onClose={() => setIsHistoryOpen(false)}
-                                            onSelect={setSelectedPerfume}
+                                            onSelect={(perfume) => setSelectedPerfume(perfume)}
+                                            isKorean={isKorean}
                                         />
                                     )}
                                 </div>
@@ -406,7 +407,7 @@ export default function ArchivesPage() {
                                         <CabinetShelf
                                             key={item.my_perfume_id}
                                             perfume={item}
-                                            onSelect={setSelectedPerfume}
+                                            onSelect={(perfume) => setSelectedPerfume(perfume)}
                                             isKorean={isKorean}
                                         />
                                     ))}
