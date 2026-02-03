@@ -112,8 +112,13 @@ export default function ArchivesPage() {
             .then((data) => {
                 if (data?.profile_image_url) {
                     // [이미지 경로 함정 방지 로직]
-                    // 전체 경로(http)나 프록시 경로(/uploads)는 그대로 사용합니다.
-                    setProfileImageUrl(data.profile_image_url);
+                    // 전체 경로(http)나 프록시 경로(/uploads)는 그대로 사용하고,
+                    // 그 외의 경우에만 도메인을 결합하여 사진 깨짐을 방지합니다.
+                    const rawUrl = data.profile_image_url;
+                    const finalUrl = (rawUrl.startsWith("http") || rawUrl.startsWith("/uploads"))
+                        ? rawUrl
+                        : `${apiBaseUrl}${rawUrl}`;
+                    setProfileImageUrl(finalUrl);
                 }
             })
             .catch(() => setProfileImageUrl(null));
@@ -345,7 +350,8 @@ export default function ArchivesPage() {
                                         <HistoryModal
                                             historyItems={collection.filter(p => p.register_status === 'HAD')}
                                             onClose={() => setIsHistoryOpen(false)}
-                                            onSelect={setSelectedPerfume}
+                                            onSelect={(perfume) => setSelectedPerfume(perfume)}
+                                            isKorean={isKorean}
                                         />
                                     )}
                                 </div>
@@ -406,7 +412,7 @@ export default function ArchivesPage() {
                                         <CabinetShelf
                                             key={item.my_perfume_id}
                                             perfume={item}
-                                            onSelect={setSelectedPerfume}
+                                            onSelect={(perfume) => setSelectedPerfume(perfume)}
                                             isKorean={isKorean}
                                         />
                                     ))}
