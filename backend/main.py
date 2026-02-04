@@ -73,7 +73,6 @@ def resolve_recommended_count_with_flag(
 
     # 케이스 3: 디폴트
     return (3, False)  # 디폴트는 묵시적
-
 async def stream_generator(
     user_query: str,
     thread_id: str,
