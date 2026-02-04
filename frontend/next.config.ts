@@ -20,6 +20,9 @@ const layeringApiUrl = normalizedLayeringApiUrl.endsWith("/layering")
 const scentmapUrl = process.env.SCENTMAP_INTERNAL_URL ?? "http://scentmap:8001";  // Docker Compose 서비스명
 
 const nextConfig: NextConfig = {
+  // 프로덕션 빌드를 위한 standalone 모드 활성화
+  output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined,
+  
   // [추가] 윈도우 Docker 환경에서 Hot Reload가 안 될 때를 위한 강제 설정
   webpack: (config) => {
     config.watchOptions = {
