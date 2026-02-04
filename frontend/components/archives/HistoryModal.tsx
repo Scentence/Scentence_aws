@@ -5,8 +5,12 @@ interface MyPerfume {
     my_perfume_id: number;
     perfume_id: number;
     name: string;
+    name_en?: string;
+    name_kr?: string;
     brand: string;
+    brand_kr?: string;
     image_url: string | null;
+    register_status: string;
     status: string;
     preference?: string;
 }
@@ -14,8 +18,9 @@ interface Props {
     historyItems: MyPerfume[];
     onClose: () => void;
     onSelect: (perfume: MyPerfume) => void;
+    isKorean?: boolean;
 }
-export default function HistoryModal({ historyItems, onClose, onSelect }: Props) {
+export default function HistoryModal({ historyItems, onClose, onSelect, isKorean = true }: Props) {
     return (
         <>
             {/* 배경 클릭 시 닫기 (투명 레이어) */}
@@ -58,6 +63,7 @@ export default function HistoryModal({ historyItems, onClose, onSelect }: Props)
                                             onClose(); // 선택 시 팝오버 닫기
                                             onSelect(p);
                                         }}
+                                        isKorean={isKorean}
                                     />
                                     {item.preference && (
                                         <div className="absolute top-0 right-0 bg-white/90 backdrop-blur px-2 py-0.5 rounded-bl-lg text-[10px] font-bold shadow-sm border-l border-b border-gray-100 text-gray-600">
