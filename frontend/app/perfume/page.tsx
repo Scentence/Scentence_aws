@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import PageLayout from "@/components/common/PageLayout";
 
@@ -27,7 +27,7 @@ function joinNames(items: RatioItem[]) {
   return items.map((item) => item.name).join(", ");
 }
 
-export default function PerfumeDetailPage() {
+function PerfumeDetailContent() {
   const searchParams = useSearchParams();
   const perfumeId = useMemo(() => {
     const id = searchParams.get("id") || searchParams.get("perfume_id");

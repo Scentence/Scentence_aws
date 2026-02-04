@@ -1,0 +1,32 @@
+# 향수맵(scentmap) 서비스용 프로덕션 Dockerfile
+# Build context: Scentence
+FROM python:3.11-slim
+
+# 작업 디렉토리 설정
+WORKDIR /app
+
+# 시스템 패키지 업데이트 및 필요한 패키지 설치
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    libpq-dev \
+    gcc \
+    curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# 프로젝트 파일 복사 및 설치
+COPY pyproject.toml /app/pyproject.toml
+COPY scentmap /app/scentmap
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir .
+
+# 헬스체크 설정
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8001/health || exit 1
+
+# 포트 노출
+EXPOSE 8001
+
+# [개선] EC2 배포 최적화: 싱글 워커 (메모리 캐시 효율 100%)
+# 멀티 워커는 각자 독립적인 메모리 캐시를 가져 비효율적
+# 스케일링이 필요하면 docker-compose에서 replicas 사용
+CMD ["uvicorn", "scentmap.main:app", "--host", "0.0.0.0", "--port", "8001", "--log-level", "info"]
