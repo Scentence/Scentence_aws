@@ -83,7 +83,7 @@ export const NScentCard: React.FC<NScentCardProps> = ({ card, userName, onClose,
   // 이미지 다운로드 핸들러
   const handleDownload = async () => {
     try {
-      const html2canvas = (await import('html2canvas')).default;
+      const html2canvas = (await import('html2canvas' as any)).default as any;
       if (cardRef.current) {
         const canvas = await html2canvas(cardRef.current, {
           scale: 2,
