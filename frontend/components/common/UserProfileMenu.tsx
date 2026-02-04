@@ -97,17 +97,17 @@ export default function UserProfileMenu({ isOpen, onClose }: UserProfileMenuProp
         hidden: {
             opacity: 0, scale: 0.95, y: -10,
             backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)"
-        },
+        }as any,
         show: {
             opacity: 1, scale: 1, y: 0,
             backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
             transition: { type: "spring" as const, stiffness: 300, damping: 30 }
-        },
+        }as any,
         exit: {
             opacity: 0, scale: 0.95, y: -10,
             backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
             transition: { duration: 0.2 }
-        }
+        }as any
     };
 
     // [HYPER-REALISTIC LIQUID GLASS BLOCK]
