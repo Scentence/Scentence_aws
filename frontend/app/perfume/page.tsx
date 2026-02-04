@@ -443,7 +443,15 @@ function PerfumeDetailContent() {
           }
         }
       `}</style>
-      </div >
+    </div>
     </PageLayout>
+  );
+}
+
+export default function PerfumeDetailPage() {
+  return (
+    <Suspense fallback={<div className="page"><div className="container"><div className="status">로딩 중...</div></div></div>}>
+      <PerfumeDetailContent />
+    </Suspense>
   );
 }
