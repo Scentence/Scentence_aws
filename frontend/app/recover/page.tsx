@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import PageLayout from "@/components/common/PageLayout";
 
-export default function RecoverPage() {
+function RecoverPageContent() {
   const searchParams = useSearchParams();
   const memberId = searchParams.get("memberId");
   const [nickname, setNickname] = useState<string | null>(null);
