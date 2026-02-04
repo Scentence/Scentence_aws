@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import PageLayout from "@/components/common/PageLayout";
 
-export default function RecoverPage() {
+function RecoverPageContent() {
   const searchParams = useSearchParams();
   const memberId = searchParams.get("memberId");
   const [nickname, setNickname] = useState<string | null>(null);
@@ -79,5 +79,17 @@ export default function RecoverPage() {
         </button>
       </main>
     </PageLayout>
+  );
+}
+
+export default function RecoverPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+      </div>
+    }>
+      <RecoverPageContent />
+    </Suspense>
   );
 }
